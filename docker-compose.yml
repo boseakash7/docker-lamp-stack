@@ -1,0 +1,60 @@
+version: '3.1'
+services:
+  apache:
+    build:
+      context: .
+      dockerfile: .docker/apache/Dockerfile
+    image: lampp:apache
+    ports:
+      - 80:80
+      - 443:443
+    depends_on:
+      - mysql
+      - php
+    volumes:
+      - ./http:/usr/local/apache2/web
+      - ./ssl:/usr/local/apache2/web/ssl
+      - ./logs/apache:/usr/local/apache2/web/logs
+  php:
+    build:
+      context: .
+      dockerfile: .docker/php/Dockerfile
+    image: lampp:php
+    volumes:
+      - ./http:/usr/local/apache2/web
+    environment:
+      - MYSQL_DATABASE=${MYSQL_DATABASE}
+      - MYSQL_USER=${MYSQL_USER}
+      - MYSQL_PASSWORD=${MYSQL_PASSWORD}
+    depends_on:
+      - mysql
+  mysql:
+    build:
+      context: .
+      dockerfile: .docker/mysql/Dockerfile
+    image: lampp:mysql
+    # command: mysqld --sql-mode="STRICT_TRANS_TABLES,NO_ZERO_IN_DATE,NO_ZERO_DATE,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION"
+    ports:
+      - 3306:3306
+    environment:
+      - MARIADB_DATABASE=${MYSQL_DATABASE}
+      - MARIADB_USER=${MYSQL_USER}
+      - MARIADB_PASSWORD=${MYSQL_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - ./data:/var/lib/mysql
+      - ./volume:/opt/volume
+      - .docker/mysql/config:/etc/mysql/conf.d
+  phpmyadmin:
+    build:
+      context: .
+      dockerfile: .docker/phpmyadmin/Dockerfile
+    image: lampp:phpmyadmin
+    ports: 
+      - 8080:80
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      # - PMA_USER=${MYSQL_USER}
+      # - PMA_PASSWORD=${MYSQL_PASSWORD}
+      - UPLOAD_LIMIT=2000M
